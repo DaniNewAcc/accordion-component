@@ -1,71 +1,63 @@
-import { ReactNode, useState } from 'react';
-import AccordionTrigger from './ui/Wrapper';
-import AccordionHeader from './ui/Wrapper';
+import { createContext, ReactNode, useState } from 'react';
+import AccordionItem from './AccordionItem';
+import AccordionHeader from './AccordionHeader';
+import AccordionContent from './AccordionContent';
+import AccordionTrigger from './AccordionTrigger';
 
 type AccordionProps = {
   ariaControls: string;
-  wrapperClasses: string;
-  headerClasses: string;
-  titleClasses: string;
-  triggerClasses: string;
-  contentWrapperClasses: string;
-  contentClasses: string;
-  title: string;
+  id: string;
+  wrapperElement: keyof JSX.IntrinsicElements;
+  className: string;
   children: ReactNode;
 };
 
-function Accordion({
+type AccordionContextProps = {
+  activeItem: string | null;
+  toggleAccordion: (id: string | null) => void;
+};
+
+export const AccordionContext = createContext<AccordionContextProps | null>(
+  null
+);
+
+export default function Accordion({
   ariaControls,
-  wrapperClasses,
-  headerClasses,
-  titleClasses,
-  triggerClasses,
-  contentWrapperClasses,
-  contentClasses,
-  title,
+  id,
+  wrapperElement,
+  className,
   children
 }: AccordionProps) {
-  const [isActive, setIsActive] = useState(false);
+  const [activeItem, setActiveItem] = useState<string | null>(null);
 
-  const handleClick = () => {
-    setIsActive(prev => !prev);
-  };
-
-  if (isActive) {
-    contentWrapperClasses += ' max-h-none opacity-100';
-  } else {
-    contentWrapperClasses += ' max-h-0 opacity-0';
+  function toggleAccordion(id: string | null) {
+    setActiveItem(prev => (prev === id ? null : id));
   }
 
+  const WrapperType = wrapperElement;
+
+  const contextValue = {
+    activeItem: activeItem,
+    toggleAccordion
+  };
+
+  const isOpen = activeItem === id;
+
   return (
-    <>
-      <div
+    <AccordionContext.Provider value={contextValue}>
+      <WrapperType
         aria-controls={ariaControls}
-        aria-expanded={isActive}
-        aria-label={(isActive ? 'hide' : 'show') + ' content'}
-        className={wrapperClasses}
-        onClick={handleClick}
+        aria-expanded={isOpen ? true : false}
+        aria-label={isOpen ? 'Show' : 'Hide'}
+        className={className}
       >
-        <AccordionHeader
-          wrapperElement="div"
-          className={headerClasses}
-        >
-          <p className={titleClasses}>{title}</p>
-          <AccordionTrigger
-            wrapperElement="button"
-            className={triggerClasses}
-          >
-            {isActive ? 'Hide' : 'Show'}
-          </AccordionTrigger>
-        </AccordionHeader>
-        {isActive && (
-          <div id={ariaControls} className={contentWrapperClasses}>
-            <p className={contentClasses}>{children}</p>
-          </div>
-        )}
-      </div>
-    </>
+        {children}
+      </WrapperType>
+    </AccordionContext.Provider>
   );
 }
 
-export default Accordion;
+Accordion.Item = AccordionItem;
+Accordion.Header = AccordionHeader;
+Accordion.Trigger = AccordionTrigger;
+Accordion.Content = AccordionContent;
